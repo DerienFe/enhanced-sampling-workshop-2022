@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<System openmmVersion="7.7" type="System" version="1">
+<System openmmVersion="8.0" type="System" version="1">
 	<PeriodicBoxVectors>
 		<A x="2" y="0" z="0"/>
 		<B x="0" y="2" z="0"/>
@@ -8540,11 +8540,12 @@
 				<Exception eps="0" p1="1698" p2="1699" q="0" sig=".1"/>
 			</Exceptions>
 		</Force>
-		<Force cutoff="1" energy="(a/r6)^2-b/r6; r6=r^6;a=acoef(type1, type2);b=bcoef(type1, type2)" forceGroup="6" method="0" name="CustomNonbondedForce" switchingDistance="-1" type="CustomNonbondedForce" useLongRangeCorrection="0" useSwitchingFunction="0" version="2">
+		<Force cutoff="1" energy="(a/r6)^2-b/r6; r6=r^6;a=acoef(type1, type2);b=bcoef(type1, type2)" forceGroup="6" method="0" name="CustomNonbondedForce" switchingDistance="-1" type="CustomNonbondedForce" useLongRangeCorrection="0" useSwitchingFunction="0" version="3">
 			<PerParticleParameters>
 				<Parameter name="type"/>
 			</PerParticleParameters>
 			<GlobalParameters/>
+			<ComputedValues/>
 			<EnergyParameterDerivatives/>
 			<Particles>
 				<Particle param1="0"/>
