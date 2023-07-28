@@ -74,10 +74,9 @@ def bias_K_1D(K, total_bias, kT=0.5981):
     K_biased = np.zeros([N, N])#, #dtype=np.float64)
 
     for i in range(N-1):
-        u_ij = total_bias[i+1] - total_bias[i]  
-
-        K_biased[i, i+1] = K[i, i+1] * np.exp(-u_ij /(2*kT))
-        K_biased[i+1, i] = K[i+1, i] * np.exp(u_ij /(2*kT))
+        u_ij = total_bias[i+1] - total_bias[i]  # Calculate u_ij (Note: Indexing starts from 0)
+        K_biased[i, i+1] = K[i, i+1] * np.exp(u_ij /(2*kT))  # Calculate K_biased
+        K_biased[i+1, i] = K[i+1, i] * np.exp(-u_ij /(2*kT))
     
     for i in range(N):
         K_biased[i,i] = -np.sum(K_biased[:,i])
@@ -112,7 +111,7 @@ def compute_free_energy(K, kT=0.5981):
     return [peq, F, evectors, evalues, evalues_sorted, index]
 
 
-def try_and_optim(K, num_gaussian=10):
+def try_and_optim(K, num_gaussian=10, start_state=0, end_state=0):
     """
     here we try different gaussian params 1000 times
     and use the best one (lowest mfpt) to local optimise the gaussian_params
@@ -124,17 +123,17 @@ def try_and_optim(K, num_gaussian=10):
         rng = np.random.default_rng()
         #we set a to be 1
         a = np.ones(num_gaussian)
-        b = rng.uniform(2.41, 28.8, num_gaussian) #min/max of preloaded NaCl fes x-axis.
+        b = rng.uniform(2.41, 9, num_gaussian) #min/max of preloaded NaCl fes x-axis.
         c = rng.uniform(1, 5.0, num_gaussian) 
         
-        total_bias = np.zeros(200) # we were using first 50 points of the fes
+        total_bias = np.zeros(50) # we were using first 50 points of the fes
         for j in range(num_gaussian):
-            total_bias += gaussian(np.arange(200), a[j], b[j], c[j])
+            total_bias += gaussian(np.arange(50), a[j], b[j], c[j])
         
         K_biased = bias_K_1D(K, total_bias, kT=0.5981)
         peq = compute_free_energy(K_biased, kT=0.5981)[0]
         mfpts_biased = mfpt_calc(peq, K_biased)
-        mfpt_biased = mfpts_biased[26,95]
+        mfpt_biased = mfpts_biased[start_state, end_state]
         print("random try:", i, "mfpt:", mfpt_biased)
         if best_mfpt > mfpt_biased:
             best_mfpt = mfpt_biased
@@ -143,13 +142,13 @@ def try_and_optim(K, num_gaussian=10):
     print("best mfpt:", best_mfpt)
     #now we use the best params to local optimise the gaussian params
 
-    def mfpt_helper(params, K, kT=0.5981, start_state = 26, end_state = 95):
+    def mfpt_helper(params, K, kT=0.5981, start_state = start_state, end_state = end_state):
         a = params[:num_gaussian]
         b = params[num_gaussian:2*num_gaussian]
         c = params[2*num_gaussian:]
-        total_bias = np.zeros(200)
+        total_bias = np.zeros(50)
         for j in range(num_gaussian):
-            total_bias += gaussian(np.arange(200), a[j], b[j], c[j])
+            total_bias += gaussian(np.arange(50), a[j], b[j], c[j])
         K_biased = bias_K_1D(K, total_bias, kT=0.5981)
         peq = compute_free_energy(K_biased, kT=0.5981)[0]
         mfpts_biased = mfpt_calc(peq, K_biased)
@@ -160,7 +159,7 @@ def try_and_optim(K, num_gaussian=10):
                    best_params, 
                    args=(K,), 
                    method='Nelder-Mead', 
-                   bounds= [(0, 1)]*10 + [(2.41, 28.8)]*10 + [(1.0, 5.0)]*10, #add bounds to the parameters
+                   bounds= [(0, 1)]*10 + [(2.41, 9)]*10 + [(1.0, 5.0)]*10, #add bounds to the parameters
                    tol=1e-1)
 
     return res.x

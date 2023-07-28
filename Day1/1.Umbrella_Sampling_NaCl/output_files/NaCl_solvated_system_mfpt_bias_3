@@ -6829,35 +6829,35 @@
 			<PerBondParameters/>
 			<GlobalParameters>
 				<Parameter default="1" name="a0"/>
-				<Parameter default="24.798472219801994" name="b0"/>
-				<Parameter default="1.0109754665506117" name="c0"/>
+				<Parameter default="2.4186631389524074" name="b0"/>
+				<Parameter default="1.9260608930140126" name="c0"/>
 				<Parameter default="1" name="a1"/>
-				<Parameter default="6.275088566199891" name="b1"/>
-				<Parameter default="1.0367930815449005" name="c1"/>
+				<Parameter default="2.411249106286375" name="b1"/>
+				<Parameter default="2.203494985914068" name="c1"/>
 				<Parameter default="1" name="a2"/>
-				<Parameter default="28.76323310544194" name="b2"/>
-				<Parameter default="1.1012822825048243" name="c2"/>
+				<Parameter default="2.4132261531729204" name="b2"/>
+				<Parameter default="2.1623372387533655" name="c2"/>
 				<Parameter default="1" name="a3"/>
-				<Parameter default="11.4725916380267" name="b3"/>
-				<Parameter default="1.0239269582492438" name="c3"/>
+				<Parameter default="2.4161227698113077" name="b3"/>
+				<Parameter default="1.8242963681181914" name="c3"/>
 				<Parameter default="1" name="a4"/>
-				<Parameter default="8.633296626767837" name="b4"/>
-				<Parameter default="1" name="c4"/>
+				<Parameter default="2.4754051001382313" name="b4"/>
+				<Parameter default="4.781746421553576" name="c4"/>
 				<Parameter default="1" name="a5"/>
-				<Parameter default="4.975530004135534" name="b5"/>
-				<Parameter default="1" name="c5"/>
+				<Parameter default="8.843006250383972" name="b5"/>
+				<Parameter default="4.984028658587748" name="c5"/>
 				<Parameter default="1" name="a6"/>
-				<Parameter default="2.555855115711439" name="b6"/>
-				<Parameter default="1.146861590196715" name="c6"/>
+				<Parameter default="2.4157542579462987" name="b6"/>
+				<Parameter default="2.174154935848204" name="c6"/>
 				<Parameter default="1" name="a7"/>
-				<Parameter default="7.159564806420924" name="b7"/>
-				<Parameter default="1.0240300558971485" name="c7"/>
+				<Parameter default="2.79069982612533" name="b7"/>
+				<Parameter default="5" name="c7"/>
 				<Parameter default="1" name="a8"/>
-				<Parameter default="13.631851206333103" name="b8"/>
-				<Parameter default="1" name="c8"/>
+				<Parameter default="8.88920444961217" name="b8"/>
+				<Parameter default="4.993893383318637" name="c8"/>
 				<Parameter default="1" name="a9"/>
-				<Parameter default="9.137531766785372" name="b9"/>
-				<Parameter default="1.0335708528589183" name="c9"/>
+				<Parameter default="2.4172971449284386" name="b9"/>
+				<Parameter default="1.723055113972011" name="c9"/>
 			</GlobalParameters>
 			<EnergyParameterDerivatives/>
 			<Bonds>

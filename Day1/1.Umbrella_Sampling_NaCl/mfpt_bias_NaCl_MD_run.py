@@ -11,7 +11,7 @@ import mdtraj
 from util import *
 
 psf_file = 'toppar/step3_input.psf' # Path
-pdb_file = 'toppar/step3_input.pdb' # Path
+pdb_file = 'toppar/step3_input_2A.pdb' # Path
 psf = omm_app.CharmmPsfFile(psf_file)
 pdb = omm_app.PDBFile(pdb_file)
 
@@ -33,7 +33,7 @@ T = 298.15      # temperature in K
 fricCoef = 10   # friction coefficient in 1/ps
 stepsize = 2    # integration step size in fs
 dcdfreq = 100   # save coordinates at every 100 step
-steps = 1000000  # total steps
+steps = 100000  # total steps
 
 integrator = omm.LangevinIntegrator(T*kelvin, #Desired Integrator
                                     fricCoef/picoseconds,
