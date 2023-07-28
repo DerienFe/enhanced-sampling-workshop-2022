@@ -17,7 +17,7 @@ def create_K_1D(fes, N=200, kT=0.5981):
     #input:
     #fes: the free energy profile, a 1D array.
 
-    K = np.zeros((N,N)) #, dtype=np.float64
+    K = np.zeros((N,N), dtype=np.float64) #, dtype=np.float64
     for i in range(N-1):
         K[i, i + 1] = np.exp((fes[i+1] - fes[i]) / 2 / kT)
         K[i + 1, i] = np.exp((fes[i] - fes[i+1]) / 2 / kT)
@@ -106,7 +106,7 @@ def compute_free_energy(K, kT=0.5981):
     #print('sum of the peq is:', np.sum(peq))
 
     #calculate the free energy
-    F = -kT * np.log(peq + 1e-6) #add a small number to avoid log(0))
+    F = -kT * np.log(peq) #add a small number to avoid log(0)) # + 1e-16
 
     return [peq, F, evectors, evalues, evalues_sorted, index]
 
@@ -123,7 +123,7 @@ def try_and_optim(K, num_gaussian=10, start_state=0, end_state=0):
         rng = np.random.default_rng()
         #we set a to be 1
         a = np.ones(num_gaussian)
-        b = rng.uniform(2.41, 9, num_gaussian) #min/max of preloaded NaCl fes x-axis.
+        b = rng.uniform(0, 9, num_gaussian) #min/max of preloaded NaCl fes x-axis.
         c = rng.uniform(1, 5.0, num_gaussian) 
         
         total_bias = np.zeros(50) # we were using first 50 points of the fes
@@ -159,7 +159,7 @@ def try_and_optim(K, num_gaussian=10, start_state=0, end_state=0):
                    best_params, 
                    args=(K,), 
                    method='Nelder-Mead', 
-                   bounds= [(0, 1)]*10 + [(2.41, 9)]*10 + [(1.0, 5.0)]*10, #add bounds to the parameters
+                   bounds= [(0, 1)]*10 + [(0, 9)]*10 + [(1.0, 5.0)]*10, #add bounds to the parameters
                    tol=1e-1)
 
-    return res.x
+    return res.x, best_params

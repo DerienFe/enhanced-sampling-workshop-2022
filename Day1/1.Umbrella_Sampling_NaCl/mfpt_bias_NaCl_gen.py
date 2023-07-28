@@ -50,23 +50,15 @@ mfpts = mfpt_calc(peq, K)
 mfpt = mfpts[start_state, end_state]
 kemeny_constant_check(N, mfpts, peq)
 
-"""test_bias = np.zeros(50)
-test_bias[2] = 3
-
-K_biased = bias_K_1D(K, test_bias, kT=0.5981)
-[peq_biased, F_biased, evectors, evalues, evalues_sorted, index] = compute_free_energy(K_biased)
-mfpts_biased = mfpt_calc(peq_biased, K_biased)
-mfpt_biased = mfpts_biased[start_state, end_state]
-kemeny_constant_check(N, mfpts_biased, peq_biased)"""
 #plot the reconstructed F
 #2.418102979660034 8.924837112426758 min/max of preloaded NaCl fes x-axis.
 #2.41 28.8 A for whole FES.
 #the 3rd element of unb_profile is zero. 
-"""plt.plot(unb_bins, F - F.min(), label="reconstructed F")
+plt.plot(unb_bins, F - F.min(), label="reconstructed F")
 plt.plot(unb_bins, unb_profile - unb_profile.min(), label="unbiased F")
 plt.legend()
 plt.xlabel("Na-Cl distance (A)")
-plt.show()"""
+plt.show()
 
 #print(start_state, end_state)
 
@@ -74,8 +66,18 @@ plt.show()"""
 # note bias potential is 10 gaussianfunctions added together.
 # then we random try 1000 times and local optmize the gaussian params.
 
-gaussian_params = try_and_optim(K, num_gaussian=10, start_state=start_state, end_state=end_state)
+gaussian_params, random_best_gaussian_params = try_and_optim(K, num_gaussian=10, start_state=start_state, end_state=end_state)
 
+
+"""num_gaussian = 10
+a,b,c = random_best_gaussian_params
+#apply it and plot the new F
+total_bias = np.zeros(50)
+for j in range(10):
+    total_bias += gaussian(np.arange(50), a[j], b[j], c[j])
+
+#plt.plot(unb_bins, total_bias, label="total bias random")
+"""
 #print(gaussian_params)
 #unpack params
 num_gaussian = 10
@@ -83,20 +85,25 @@ a = gaussian_params[:num_gaussian]
 b = gaussian_params[num_gaussian:2*num_gaussian]
 c = gaussian_params[2*num_gaussian:]
 #apply it and plot the new F
-total_bias = np.zeros(50)
+total_bias_opt = np.zeros(50)
 for j in range(10):
-    total_bias += gaussian(np.arange(50), a[j], b[j], c[j])
-K_biased = bias_K_1D(K, total_bias, kT=0.5981)
-[peq_biased, F_biased, evectors, evalues, evalues_sorted, index] = compute_free_energy(K_biased)
+    total_bias_opt += gaussian(np.arange(50), a[j], b[j], c[j])
 
+plt.plot(unb_bins, total_bias_opt-total_bias_opt.min(), label="total bias scipy opt", linewidth=0.5)
+#plt.plot(unb_bins, unb_profile + total_bias_opt, label="biased F scipy opt")
+K_biased = bias_K_1D(K, total_bias_opt, kT=0.5981)
+[peq_biased, F_biased, evectors, evalues, evalues_sorted, index] = compute_free_energy(K_biased)
 mfpts_biased = mfpt_calc(peq_biased, K_biased)
 mfpt_biased = mfpts_biased[start_state, end_state]
 
 kemeny_constant_check(N, mfpts_biased, peq_biased)
 
 #plot the reconstructed F
-plt.plot(unb_bins, F_biased - F_biased[2], label="biased F")
-plt.plot(unb_bins, unb_profile - unb_profile[2], label="unbiased F")
+plt.plot(unb_bins, F_biased - F_biased.min(), label="biased F reconstructed")
+plt.plot(unb_bins, unb_profile, label="unbiased F")
+#plt.plot(unb_bins, unb_profile - unb_profile[2], label="unbiased F")
+plt.plot(unb_bins[start_state], unb_profile[start_state], marker="o", markersize=5, markeredgecolor="red")
+plt.plot(unb_bins[end_state], unb_profile[end_state], marker="x", markersize=5, markeredgecolor="green")
 plt.title(f"mfpt biased after try and optim. mfpt: {mfpt:.2f} mfpt_biased: {mfpt_biased:.2f}")
 plt.legend()
 plt.show()
