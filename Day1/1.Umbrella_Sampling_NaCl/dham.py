@@ -1,3 +1,8 @@
+#original code from github: https://github.com/rostaresearch/enhanced-sampling-workshop-2022/blob/main/Day1/src/dham.py
+#modified by TW on 28th July 2023
+#note that in this code we presume the bias is 10 gaussian functions added together.
+#returns the Markov Matrix, free energy surface probed by DHAM. 
+
 import numpy as np
 import matplotlib.pyplot as plt
 from glob import glob
@@ -28,7 +33,7 @@ def count_transitions(b, numbins, lagtime, endpt=None):
                 continue
     sumtr = np.sum(Ntr, axis=0)
     trvec = np.sum(Ntr, axis=2)
-    # sym = 0.5 * (sumtr + np.transpose(sumtr))
+    sym = 0.5 * (sumtr + np.transpose(sumtr))
     # anti = 0.5 * (sumtr - np.transpose(sumtr))
     # print("Degree of symmetry:",
     #       (np.linalg.norm(sym) - np.linalg.norm(anti)) / (np.linalg.norm(sym) + np.linalg.norm(anti)))
@@ -50,11 +55,10 @@ class DHAM:
     def __init__(self):
         return
 
-    def setup(self, dist, T, K, centres):
-        self.data = dist
+    def setup(self, CV, T, gaussian_params):
+        self.data = CV
         self.KbT = 0.001987204259 * T
-        self.k_val = np.array(K)
-        self.constr_val = np.array(centres)
+        self.gaussian_params = np.array(gaussian_params)
         return
 
     def build_MM(self, sumtr, trvec, biased=False):
@@ -67,7 +71,7 @@ class DHAM:
                     if sumtr[i, j] > 0:
                         sump1 = 0.0
                         for k in range(trvec.shape[0]):
-                            u = 0.5 * self.k_val[k] * np.square(self.constr_val[k] - self.qspace - qsp / 2) / self.KbT
+                            u = 0.5 * self.k_val[k] * np.square(self.constr_val[k] - self.qspace - qsp / 2) / self.KbT #change this line to adapt our 10-gaussian bias.
                             if trvec[k, i] > 0:
                                 sump1 += trvec[k, i] * np.exp(-(u[j] - u[i]) / 2)
                         MM[i, j] = sumtr[i, j] / sump1
@@ -91,6 +95,8 @@ class DHAM:
         self.qspace = qspace
         b = np.digitize(self.data[:, :], qspace)
         sumtr, trvec = count_transitions(b, self.numbins, self.lagtime)
+        print("Number of transitions:", np.sum(sumtr))
+        print("Transition vector:", np.sum(trvec, axis=0))
         MM = self.build_MM(sumtr, trvec, biased)
         d, v = eig(np.transpose(MM))
         mpeq = v[:, np.where(d == np.max(d))[0][0]]
