@@ -4,7 +4,7 @@
 import numpy as np
 from scipy.linalg import logm, expm
 from scipy.optimize import minimize
-
+import matplotlib.pyplot as plt
 def gaussian(x, a, b, c): #self-defined gaussian function
         return a * np.exp(-(x - b)**2 / ((2*c)**2)) 
 
@@ -106,7 +106,8 @@ def compute_free_energy(K, kT=0.5981):
     #print('sum of the peq is:', np.sum(peq))
 
     #calculate the free energy
-    F = -kT * np.log(peq) #add a small number to avoid log(0)) # + 1e-16
+    peq = peq.real
+    F = -kT * np.log(peq+1e-16) #add a small number to avoid log(0)) # + 1e-16
 
     return [peq, F, evectors, evalues, evalues_sorted, index]
 
@@ -163,3 +164,172 @@ def try_and_optim(K, num_gaussian=10, start_state=0, end_state=0):
                    tol=1e-1)
 
     return res.x, best_params
+
+
+def bias_M_1D(M, total_bias, kT=0.5981):
+    """
+    M is the unperturbed transition matrix.
+    total_bias is the total biasing potential.
+    kT is the thermal energy.
+    This function returns the perturbed transition matrix M_biased.
+    """
+    N = M.shape[0]
+    M_biased = np.zeros([N, N])#, #dtype=np.float64)
+
+    for i in range(N):
+        for j in range(N):
+            u_ij = total_bias[j] - total_bias[i]
+            M_biased[i, j] = M[i, j] * np.exp(u_ij / kT)
+        M_biased[i, i] = M[i,i]
+
+    for i in range(N):
+        if np.sum(M_biased[:, i]) != 0:
+            M_biased[:, i] = M_biased[:, i] / np.sum(M_biased[:, i])
+        else:
+            M_biased[:, i] = 0
+    return M_biased.real
+
+#below Markov_mfpt_calc is provided by Sam M.
+def Markov_mfpt_calc(peq, M):
+    N = M.shape[0]
+    onevec = np.ones((N, 1))
+    Idn = np.diag(onevec[:, 0])
+    A = (peq.reshape(-1, 1)) @ onevec.T #was peq.T @ onevec.T
+    A = A.T
+    Qinv = np.linalg.inv(Idn + A - M)
+    mfpt = np.zeros((N, N))
+    for j in range(N):
+        for i in range(N):
+            term1 = Qinv[j, j] - Qinv[i, j] + Idn[i, j]
+            if peq[j] * term1 == 0:
+                mfpt[i, j] = 1000000000000
+            else:
+                mfpt[i, j] = 1/peq[j] * term1
+    #result = kemeny_constant_check(N, mfpt, peq)
+    return mfpt
+
+
+def try_and_optim_M(M, working_indices, num_gaussian=10, start_state=0, end_state=0, plot = False):
+    """
+    here we try different gaussian params 1000 times
+    and use the best one (lowest mfpt) to local optimise the gaussian_params
+    
+    returns the best gaussian params
+
+    input:
+    M: the working transition matrix, square matrix.
+    working_indices: the indices of the working states.
+    num_gaussian: number of gaussian functions to use.
+    start_state: the starting state. note this has to be converted into the index space.
+    end_state: the ending state. note this has to be converted into the index space.
+    index_offset: the offset of the index space. e.g. if the truncated M (with shape [20, 20]) matrix starts from 13 to 33, then the index_offset is 13.
+    """
+
+    #first we convert the big index into "index to the working indices".
+
+    #start_state_working_index = np.where(working_indices == start_state)[0][0] #convert start_state to the offset index space.
+    #end_state_working_index = np.where(working_indices == end_state)[0][0] #convert end_state to the offset index space.
+    start_state_working_index = np.argmin(np.abs(working_indices - start_state))
+    end_state_working_index = np.argmin(np.abs(working_indices - end_state))
+    
+    #now our M/working_indices could be incontinues. #N = M.shape[0]
+    qspace = np.linspace(2.4, 9, 150+1) #hard coded for now.
+    best_mfpt = 1000000000000 #initialise the best mfpt np.inf
+
+    b_min = qspace[working_indices[0]] #the min of the working indices
+    b_max = qspace[working_indices[-1]] #the max of the working indices
+
+
+    for i in range(1000): 
+        rng = np.random.default_rng()
+        #we set a to be 1
+        a = np.ones(num_gaussian)
+        b = rng.uniform(0, 9, num_gaussian) #fix this so it place gaussian at the working indices. it has to be in angstrom. because we need return these.
+        #b = rng.uniform(b_min, b_max, num_gaussian)
+        c = rng.uniform(0.1, 2.5, num_gaussian) 
+        
+        #we convert the working_indices to the qspace.
+
+        total_bias = np.zeros_like(qspace[working_indices])
+        for j in range(num_gaussian):
+            total_bias += gaussian(qspace[working_indices], a[j], b[j], c[j])
+        
+        
+        M_biased = bias_M_1D(M, total_bias, kT=0.5981)
+        [peq, F, evectors, evalues, evalues_sorted, index] = compute_free_energy(M_biased.T, kT=0.5981)
+        #test. plot F.
+        #get x-axis via qspace and working indices.
+        #x = qspace[working_indices]
+        
+        """plt.plot(x, F)
+        plt.plot(qspace[working_indices], total_bias)
+        unb_bins, unb_profile = np.load("Unbiased_Profile.npy")
+        plt.plot(unb_bins, unb_profile, label="unbiased F")
+        plt.show()"""
+        
+        mfpts_biased = Markov_mfpt_calc(peq, M_biased)
+        mfpt_biased = mfpts_biased[start_state_working_index, end_state_working_index]
+        
+        if i % 100 == 0:
+            print("random try:", i, "mfpt:", mfpt_biased)
+        if best_mfpt > mfpt_biased:
+            best_mfpt = mfpt_biased
+            best_params = (a, b, c)
+            
+    print("best mfpt:", best_mfpt)
+    #now we use the best params to local optimise the gaussian params
+
+    def mfpt_helper(params, M, start_state = start_state, end_state = end_state, kT=0.5981, working_indices=working_indices):
+        a = params[:num_gaussian]
+        b = params[num_gaussian:2*num_gaussian]
+        c = params[2*num_gaussian:]
+        total_bias = np.zeros_like(qspace[working_indices])
+        for j in range(num_gaussian):
+            total_bias += gaussian(qspace[working_indices], a[j], b[j], c[j])
+        
+        M_biased = bias_M_1D(M, total_bias, kT=0.5981)
+        [peq, F, evectors, evalues, evalues_sorted, index] = compute_free_energy(M_biased.T, kT=0.5981)
+        mfpts_biased = mfpts_biased = Markov_mfpt_calc(peq, M_biased)
+        mfpt_biased = mfpts_biased[start_state, end_state]
+
+        return mfpt_biased
+
+    res = minimize(mfpt_helper, 
+                   best_params, 
+                   args=(M,
+                         start_state_working_index, 
+                         end_state_working_index,
+                         working_indices), 
+                   method='Nelder-Mead', 
+                   bounds= [(0, 1)]*10 + [(0,9)]*10 + [(0.1, 2.5)]*10, #add bounds to the parameters
+                   tol=1e-1)
+
+    if plot:
+
+        #unpack the res.x
+        a = res.x[:num_gaussian]
+        b = res.x[num_gaussian:2*num_gaussian]
+        c = res.x[2*num_gaussian:]
+
+        total_bias = np.zeros_like(qspace[working_indices])
+        for j in range(num_gaussian):
+            total_bias += gaussian(qspace[working_indices], a[j], b[j], c[j])
+        
+        M_biased = bias_M_1D(M, total_bias, kT=0.5981)
+        [peq, F, evectors, evalues, evalues_sorted, index] = compute_free_energy(M_biased, kT=0.5981)
+
+        total_bias_A = np.zeros_like(qspace)
+        for j in range(num_gaussian):
+            total_bias_A += gaussian(qspace, a[j], b[j], c[j])
+
+        plt.title("Scipy optimized F with ground truth")
+        plt.plot(qspace[working_indices], F)
+        plt.plot(qspace, total_bias_A, label="total bias in A space.")
+        plt.plot(qspace[working_indices], total_bias, label="total bias in working indices")
+        unb_bins, unb_profile = np.load("Unbiased_Profile.npy")
+        plt.plot(unb_bins, unb_profile, label="unbiased FES (ground truth)")
+        plt.plot(qspace[working_indices[start_state_working_index]], F[start_state_working_index], "o", label="start state")
+        plt.plot(qspace[working_indices[end_state_working_index]], F[end_state_working_index], "x", label="end state")
+        plt.legend()
+        plt.show()
+    return res.x    #, best_params
