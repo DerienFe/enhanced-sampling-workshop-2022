@@ -77,7 +77,7 @@ def propagate(context, gaussian_params, prop_index, NaCl_dist, steps=10000, dcdf
     """
     
     
-    file_handle = open(f"trajectories/NaCl_exploring_traj_{prop_index}.dcd", 'bw')
+    file_handle = open(f"trajectories/explore_traj/NaCl_exploring_traj_{prop_index}.dcd", 'bw')
     dcd_file = omm_app.dcdfile.DCDFile(file_handle, psf.topology, dt = stepsize)
 
     for _ in tqdm(range(int(steps/dcdfreq)), desc=f"Propagation {prop_index}"):
@@ -89,16 +89,22 @@ def propagate(context, gaussian_params, prop_index, NaCl_dist, steps=10000, dcdf
     #now we have the trajectory, we can calculate the Markov matrix.
     
     top = mdtraj.load_psf(psf_file)
-    traj = mdtraj.load_dcd(f"trajectories/NaCl_exploring_traj_{prop_index}.dcd", top=top)
+    traj = mdtraj.load_dcd(f"trajectories/explore_traj/NaCl_exploring_traj_{prop_index}.dcd", top=top)
 
     dist = mdtraj.compute_distances(traj, [[0, 1]]) *10 #unit in A #get distance over the traj (in this propagation)
     np.savetxt(f"trajectories/NaCl_exploring_traj_{prop_index}.txt", dist) #save the distance to a txt file. 
+
+    
     
     #we concatenate the new dist to the old dist.
     # NaCl_dist is a list of renewed dist.
     combined_dist = np.concatenate((NaCl_dist[-1], dist), axis=None)
     NaCl_dist.append(combined_dist)
 
+
+    #plot it.
+    plt.plot(combined_dist)
+    plt.show()
     x, mU2, A, MM = DHAM_it(combined_dist.reshape(-1, 1), gaussian_params, T=300, lagtime=1, numbins=num_bins)
     
     cur_pos = combined_dist[-1] #the last position of the traj. not our cur_pos is the CV distance.
@@ -241,6 +247,19 @@ if __name__ == "__main__":
                 context.setParameter(f'b{j}', gaussian_params[j+10])
                 context.setParameter(f'c{j}', gaussian_params[j+20])
             
+            #we plot the total bias.
+            test_gaussian_params = []
+            for j in range(10):
+                test_gaussian_params.append(context.getParameter(f'a{j}'))
+                test_gaussian_params.append(context.getParameter(f'b{j}'))
+                test_gaussian_params.append(context.getParameter(f'c{j}'))
+            
+            test_total_bias = np.zeros_like(qspace)
+            for n in range(len(test_gaussian_params)//3):
+                test_total_bias += gaussian(qspace, test_gaussian_params[3*n], test_gaussian_params[3*n+1], test_gaussian_params[3*n+2])
+            plt.plot(qspace, test_total_bias)
+            plt.show()
+                
             ## MD run "propagation"
             cur_pos, NaCl_dist, M= propagate(context, 
                                               gaussian_params=gaussian_params, 
@@ -257,8 +276,8 @@ if __name__ == "__main__":
             farest_index = working_indices[np.argmin(np.abs(working_indices - final_index))] #get the closest to the final index
              
 
-        if farest_index > final_index:
-            print("we have sampled the fes beyongd 7A, stop propagating.")
+        if working_indices[-1] > final_index or working_indices[-1] == final_index:
+            print(f"we have sampled the fes beyongd 7A, stop propagating at number {i}")
             break
         else:
             print("continue propagating.")
