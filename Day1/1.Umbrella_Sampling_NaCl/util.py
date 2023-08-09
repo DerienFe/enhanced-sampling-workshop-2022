@@ -322,14 +322,17 @@ def try_and_optim_M(M, working_indices, num_gaussian=10, start_state=0, end_stat
         for j in range(num_gaussian):
             total_bias_A += gaussian(qspace, a[j], b[j], c[j])
 
-        plt.title("Scipy optimized F with ground truth")
-        plt.plot(qspace[working_indices], F, label = "reconstructed biased M FES")
-        plt.plot(qspace, total_bias_A, label="total bias in A space.", linestyle="--", linewidth=0.5)
-        plt.plot(qspace[working_indices], total_bias, label="total bias in working indices", linewidth=1)
+        
+        #plt.plot(qspace[working_indices], F, label = "reconstructed biased M FES")
+        plt.plot(qspace, total_bias_A, label="total bias.", linestyle="--", linewidth=0.5)
+        plt.plot(qspace[working_indices], total_bias, label="total bias applied to M", linewidth=1)
         unb_bins, unb_profile = np.load("Unbiased_Profile.npy")
-        plt.plot(unb_bins, unb_profile, label="unbiased FES (ground truth)")
-        plt.plot(qspace[working_indices[start_state_working_index]], F[start_state_working_index], "o", label="start state")
-        plt.plot(qspace[working_indices[end_state_working_index]], F[end_state_working_index], "x", label="end state")
+        plt.plot(unb_bins, unb_profile, label="unbiased FES (for reference)")
+        #plt.plot(qspace[working_indices[start_state_working_index]], F[start_state_working_index], "o", label="start state")
+        #plt.plot(qspace[working_indices[end_state_working_index]], F[end_state_working_index], "x", label="end state")
         plt.legend()
+        plt.xlabel("NaCl distance (A)")
+        plt.ylabel("Free energy (kcals/mol)")
+        plt.title("Scipy optimized bias with unbiased FES")
         plt.show()
     return res.x    #, best_params

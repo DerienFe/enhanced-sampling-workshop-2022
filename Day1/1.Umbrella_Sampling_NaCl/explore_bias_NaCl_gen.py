@@ -33,6 +33,9 @@ propagation_step = 10000
 max_propagation = 10
 num_bins = 150 #for qspace used in DHAM and etc.
 
+
+plt.rcParams.update({'font.size': 16})
+
 def random_initial_bias(initial_position):
     #returns random a,b,c for 10 gaussian functions. around the initial position
     # initial position is in Anstrom
@@ -104,6 +107,9 @@ def propagate(context, gaussian_params, prop_index, NaCl_dist, steps=10000, dcdf
 
     #plot it.
     plt.plot(combined_dist)
+    plt.xlabel("simulation step")
+    plt.ylabel("NaCl distance (A)")
+    plt.title(f"NaCl distance in propagation {prop_index}")
     plt.show()
     x, mU2, A, MM = DHAM_it(combined_dist.reshape(-1, 1), gaussian_params, T=300, lagtime=1, numbins=num_bins)
     

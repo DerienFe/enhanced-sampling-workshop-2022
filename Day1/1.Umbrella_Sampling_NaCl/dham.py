@@ -130,11 +130,11 @@ class DHAM:
         A = rate / np.exp(- dG / self.KbT) 
         x = qspace[:self.numbins]# + (qspace[1] - qspace[0])
         if plot:
-            unb_bins, unb_profile = np.load("Unbiased_Profile.npy")
+            #unb_bins, unb_profile = np.load("Unbiased_Profile.npy")
             #plot the unbiased profile from 2.4 to 9 A.
-            plt.plot(unb_bins, unb_profile, label="ground truth")
+            #plt.plot(unb_bins, unb_profile, label="ground truth")
             plt.plot(x, mU2, label="reconstructed M by DHAMsym")
-            plt.title("Lagtime={0:d} Nbins={1:d}".format(self.lagtime, self.numbins))
+            #plt.title("Lagtime={0:d} Nbins={1:d}".format(self.lagtime, self.numbins))
             #plt.show()
         return x, mU2, A, MM
 
